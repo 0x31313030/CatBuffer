@@ -1,0 +1,174 @@
+- name: Hash
+  type: alias array uint8
+  size: 32
+  print: hex
+
+
+
+- name: BlockHeader
+  type: struct
+  comment: The block header data structure which gets 2xSHA256 hashed and used as a link by blocks.
+
+  layout:
+    - name: Version
+      type: uint32
+      comment: Indicates which set of block validation rules to follow
+
+    - name: HashPrevBlock
+      type: Hash
+      comment: 2xSHA256 hash of the previous 'BlockHeader' structure. This field is what orders blocks in the blockchain.
+
+    - name: HashMerkleRoot
+      type: Hash
+      comment: The merkle root hash of the transactions in the 'Block' structure
+
+    - name: Time
+      type: uint32
+      size: 32
+      comment: Unix epoch time when the block was mined (according to the miner)
+
+    - name: Target
+      type: array uint8 #TODO: add nbits type
+      size: 4
+      print: hex
+      comment: Sets the mining difficulty
+
+    - name: Nonce
+      type: uint32
+      comment: Field that is changed when trying to mine a block 
+ 
+
+
+- name: Script
+  type: struct
+  comment: The bitcoin programming language.
+
+  layout:
+    - name: ScriptSize
+      type: varint
+      comment: Size of the 'Script' array in bytes.
+
+    - name: Script
+      type: array uint8
+      size: ScriptSize
+      print: hex
+      comment: The raw script program.
+
+  
+
+- name: Input
+  type: struct
+  comment: Bitcoin input transaction
+
+  layout:
+    - name: TxOutId
+      type: array uint8
+      size: 32
+      print: hex
+      comment: The unspent transaction output id (UTXO)
+
+    - name: TxOutIdx
+      type: uint32
+      comment: The index of the transaction in the above UTXO
+
+    - name: Script
+      type: Script
+      comment: The unlocking script
+
+    - name: Sequence
+      type: uint32
+      comment: Intended to be used for 'replacement'
+
+
+
+- name: Output
+  type: struct
+  comment: Bitcoin output transaction
+
+  layout:
+    - name: Value
+      type: uint64
+      comment: The number of satoshis to send
+
+    - name: Script
+      type: Script
+      comment: The locking script
+
+
+
+- name: Transaction
+  type: struct
+  comment: A Bitcoin transaction
+
+  layout:
+    - name: Version
+      type: uint32
+
+    - name: Flag
+      type: uint16
+      condition: Flag
+      condition_operation: equals
+      condition_value: 256
+      comment: Only present if the value is 256 and is used to indicate whether there is witness data 
+
+    - name: NumInputs
+      type: varint
+      comment: Total number of inputs that will be distributed to outputs.
+
+    - name: Inputs
+      type: array Input
+      size: NumInputs
+      comment: The inputs that will be sent to outputs.
+
+    - name: NumOutputs
+      type: varint
+      comments: Total number of outputs that will receive bitcoins from above inputs.
+
+    - name: Outputs
+      type: array Output
+      size: NumOutputs
+      comment: The outputs that will receive bitcoins from the inputs.
+
+    - name: Witnesses
+      type: array Script
+      size: NumInputs
+      condition: Flag
+      condition_operation: equals
+      condition_value: 256
+      comments: The witness data.
+
+    - name: LockTime
+      type: uint32
+      comments: Block height or timestamp when transaction is final.
+      
+      
+
+- name: BlockPreamble
+  type: struct
+  comment: The data that always precedes a bitcoin block
+
+  layout:
+    - name: MagicNo
+      type: uint32
+      comment: Must always be '0xD9B4BEF9'
+
+    - name: BlockSize
+      type: uint32
+      comment: The size of the following block in bytes
+
+
+
+- name: Block
+  type: struct
+  comment: A Bitcoin block
+
+  layout:
+    - name: BlockHeader
+      type: BlockHeader
+
+    - name: TransactionCount
+      type: varint
+
+    - name: Transactions
+      type: array Transaction
+      size: TransactionCount

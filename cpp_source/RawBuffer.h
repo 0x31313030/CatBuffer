@@ -48,7 +48,9 @@ class RawBuffer
 
 
   /**
-   * Returns pointer to current offset within buffer.
+   * Returns pointer to current offset within buffer. NOTE: Make sure to call
+   * 'RemainingSize()' if data will be read from the pointer, to make sure that
+   * there is enough data.
    *
    * @param[in] buffer
    *   Pointer to current offset.

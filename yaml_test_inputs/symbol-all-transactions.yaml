@@ -1134,18 +1134,21 @@
   type: struct
 - comments: binary layout for a namespace registration transaction
   layout:
-  - comments: namespace duration
-    condition: registration_type
-    condition_operation: equals
-    condition_value: ROOT
-    name: duration
-    type: BlockDuration
-  - comments: parent namespace identifier
-    condition: registration_type
-    condition_operation: equals
-    condition_value: CHILD
-    name: parent_id
-    type: NamespaceId
+  - comments: can be either namespace duration or parent namespace identifier
+    name: registration
+    type: uint64
+#  - comments: namespace duration
+#    condition: registration_type
+#    condition_operation: equals
+#    condition_value: ROOT
+#    name: duration
+#    type: BlockDuration
+#  - comments: parent namespace identifier
+#    condition: registration_type
+#    condition_operation: equals
+#    condition_value: CHILD
+#    name: parent_id
+#    type: NamespaceId
   - comments: namespace identifier
     name: id
     type: NamespaceId

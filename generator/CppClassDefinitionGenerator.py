@@ -51,6 +51,7 @@ class CppClassDefinitionGenerator():
 
         self.__includes                    = set()
         self.__include_code_output         = ""
+        self.__include_varint              = False
 
         self.__prettyprinter               = prettyprinter
 
@@ -66,14 +67,15 @@ class CppClassDefinitionGenerator():
     def write_file( self, file_path: str ):
         self.__generate_includes()
 
-        f = open( file_path, "w" )
-        f.write( self.__include_code_output )
-        f.write( self.__deserializer.generate() )
-        f.write( self.__serializer.generate() )
-        f.write( self.__size_generator.generate() )
+        with open( file_path, "w" ) as f:
+            f.write( self.__include_code_output )
+            f.write( self.__deserializer.generate() )
+            f.write( self.__serializer.generate() )
+            f.write( self.__size_generator.generate() )
 
-        if self.__prettyprinter:
-            f.write( self.__print_generator.generate() )
+            if self.__prettyprinter:
+                f.write( self.__print_generator.generate() )
+      
 
 
 
@@ -87,7 +89,6 @@ class CppClassDefinitionGenerator():
 
         class_name   = self.__class_decl.class_name
         fields       = self.__class_decl.fields
-        conditions   = self.__class_decl.conditions.copy()
 
         self.__includes.add( f'#include "{class_name}.h"' )
 
@@ -97,13 +98,17 @@ class CppClassDefinitionGenerator():
             size       = field["size"]  if "size"  in field else ""
             print_hint = field["print"] if "print" in field else ""
 
+            if var_type == "varint":
+                self.__include_varint = True
+
 
             if "disposition" in field:
 
+                condition   = self.__gen_condition_from_field(field) if "condition" in field else ""
                 disposition = field["disposition"]
 
                 if "const" == disposition:
-                    continue # const fields dont need serialization/deserialization
+                    continue # const fields don't need serialization/deserialization
 
                 elif( "struct_type" == disposition ):
                     continue
@@ -113,7 +118,7 @@ class CppClassDefinitionGenerator():
                     if size in self.__class_decl.member_vars:
                         _, size_var_type = self.__class_decl.member_vars[size]
 
-                    self.__deserializer.array_field( var_type, name, size, size_var_type)
+                    self.__deserializer.array_field( var_type, name, size, size_var_type, condition )
                     self.__serializer.array_field( var_type, name )
                     self.__size_generator.array_field( var_type, name )
                     self.__print_generator.array_field( var_type, name, print_hint )
@@ -156,25 +161,12 @@ class CppClassDefinitionGenerator():
             else:
 
                 if "condition" in field:
-                    condition_name = field["condition"]
-                    if condition_name in conditions:
-                        condition  = self.__gen_condition_from_field(conditions[condition_name][0])
+                    condition = self.__gen_condition_from_field(field)
 
-			 # if condition variable is defined after condition, then create an enum.
-			 #TODO: create check to ensure that union members are the same size!
-                        idx_cond,  _ = self.__class_decl.member_vars[condition_name]
-                        idx_field, _ = self.__class_decl.member_vars[name]
-
-                        union_name = ""
-                        if idx_cond > idx_field and len(conditions[condition_name]) > 1:
-                                union_name = condition_name+"_union"
-    
-                        self.__deserializer.condition_field( name, var_type, condition, union_name )
-                        self.__serializer.condition_field( name, var_type, condition, union_name )
-                        self.__size_generator.condition( name, var_type, condition, union_name )
-                        self.__print_generator.condition( name, var_type, condition, union_name )
-
-                        del conditions[condition_name]
+                    self.__deserializer.condition_field( name, var_type, field["condition"], condition )
+                    self.__serializer.condition_field( name, var_type, condition, "" )
+                    self.__size_generator.condition( name, var_type, condition, "" )
+                    self.__print_generator.condition( name, var_type, condition, "" )
 
                 else:
                     self.__deserializer.normal_field( var_type, name )
@@ -210,6 +202,11 @@ class CppClassDefinitionGenerator():
         self.__includes.add( "#include <iostream>" )
         self.__includes.add( "#include <iomanip>"  )
         self.__includes.add( "#include <limits>"   )
+
+        if self.__include_varint:
+            self.__includes.add( "#include <tuple>"    )
+            self.__includes.add( '#include "Varint.h"' )
+
         for include in self.__includes:
             self.__include_code_output += (include + "\n")
 

@@ -33,12 +33,12 @@ class CppPrintOutputGenerator():
             else:
                 print_mod, separator = get_print_mod(typedef.hint)
 
-                self.__code_output += f'\n\t{{'
+                self.__code_output += f'\n\t{{\n'
                 self.__code_output += f'\tstd::ios_base::fmtflags flags( std::cout.flags() );\n'
                 self.__code_output += f'\tstd::cout << tabs << "\\t{typedef.type} " << "{member_name}[ " << {typedef.size} << " ] = ";\n'
                 self.__code_output += f'\tfor( size_t j=0; j<{typedef.size}; ++j )\n'
                 self.__code_output += f'\t{{\n'
-                self.__code_output += f'\t\tstd::cout <<  {print_mod}{member_name}.data[j] {separator};\n'
+                self.__code_output += f'\t\tstd::cout << {print_mod}{member_name}.data[j] {separator};\n'
                 self.__code_output += f'\t}}\n'
                 self.__code_output += f'\tstd::cout.flags( flags );\n\t}}\n'
                 self.__code_output += f'\tstd::cout <<  " (" << sizeof({member_name}) <<" bytes)\\n";\n'
@@ -49,19 +49,29 @@ class CppPrintOutputGenerator():
 
         elif var_type in CppFieldGenerator.builtin_types:
 
-            if var_name in self.__size_to_arrays:
+            if var_name in self.__size_to_arrays: # if variable is an array size, use the vector '.size()' method
                 array_name = self.__size_to_arrays[var_name][0]
                 array_name = CppFieldGenerator.convert_to_field_name(array_name)
                 self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << {array_name}.size() << " (" << sizeof({var_type}) <<" bytes)\\n";\n'
             else:
-                print_mod, _ = get_print_mod(print_hint)
-                self.__code_output += f'\n\t{{'
+                print_mod, separator = get_print_mod(print_hint)
+                self.__code_output += f'\n\t{{\n'
                 self.__code_output += f'\tstd::ios_base::fmtflags flags( std::cout.flags() );\n'
-                self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << {print_mod}{member_name} << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
+
+                if print_hint: # if a hint is given, print array content on a single line as hex, asci, etc, without type information
+                    self.__code_output += f'\tstd::cout << {print_mod}{member_name} {separator};\n'
+                else:
+                    self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << {print_mod}{member_name} << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
+
                 self.__code_output += f'\tstd::cout.flags( flags );\n\t}}\n'
 
+        elif var_type == "varint":
+            self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << {member_name} << " (" << sizeVarint({member_name}) << " bytes)\\n";\n'
+
         else:
+            self.__code_output += f'\tstd::cout << "\\n";\n'
             self.__code_output += f'\t{member_name}.Print( level+1 );\n'
+            self.__code_output += f'\tstd::cout << "\\n";\n'
 
 
 
@@ -69,16 +79,28 @@ class CppPrintOutputGenerator():
         arr_member_name = CppFieldGenerator.convert_to_field_name( array_name )
 
         self.__code_output += f'\n'
-        self.__code_output += f'\tstd::cout << tabs << "\\t{array_type} " << "{arr_member_name}[ " << {arr_member_name}.size() << " ] =\\n";\n' 
-        self.__code_output += f'\tstd::cout << tabs << "\\t[\\n";\n'
+        self.__code_output += f'\tstd::cout << tabs << "\\t{array_type} " << "{arr_member_name}[" << {arr_member_name}.size() << "] = ";\n' 
+        if not print_hint:
+            self.__code_output += f'\tstd::cout << "\\n" << tabs << "\t";\n'
+
+        self.__code_output += f'\tstd::cout << "[";\n'
+
+        if not print_hint:
+            self.__code_output += f'\tstd::cout << "\\n";\n'
         self.__code_output += f'\tfor( size_t i=0; i<{arr_member_name}.size(); ++i )\n'
         self.__code_output += f'\t{{\n'
 
         self.normal_field(array_type, array_name+'[i]', print_hint)
 
         self.__code_output += f'\t}}\n'
-        self.__code_output += f'\tstd::cout << tabs <<"\\t] (" << sizeof({array_type}) * {arr_member_name}.size() <<" bytes)\\n";\n'
 
+        if not print_hint:
+            self.__code_output += f'\tstd::cout << tabs << "\t";\n'
+
+        self.__code_output += f'\tstd::cout << "] (" << sizeof({array_type}) * {arr_member_name}.size() <<" bytes)\\n";\n'
+
+        if not print_hint:
+            self.__code_output += f'\tstd::cout << "\\n";\n'
 
 
     def inline_field( self, var_name: str ):
@@ -116,9 +138,9 @@ class CppPrintOutputGenerator():
 
 
 
-    def condition( self, var_type: str, var_name: str, condition: str, union_name: str = "" ):
-        self.__code_output += f'\tstd::cout << tabs << "\\tTODO: to be implemented when unions implemented in schemas!!!: if( {condition} ) {var_type} {var_name}\\n";\n'
-        #TODO: implement this when unions and 
+    def condition( self, var_name: str, var_type: str, condition: str, union_name: str = "" ):
+        member_name = CppFieldGenerator.convert_to_field_name(var_name)
+        self.__code_output += f'\tstd::cout << tabs << "\t{var_type} " << "{member_name}: " << {member_name} << " // if( {condition} ) {var_type} {member_name}\\n";\n'
 
 
 

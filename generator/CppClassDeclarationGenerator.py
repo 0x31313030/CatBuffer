@@ -53,6 +53,7 @@ class CppClassDeclarationGenerator():
         self.comment                                                = comment
         self.member_vars : typing.Dict[str, typing.Tuple[int, str]] = {}                      # Dict to store variable name to type
 
+        #TODO: re-think this naming convention! confusing with enum and struct header
         self.group_type                                             = ""                      # The enum group that the class belongs to (if any)
         self.group_id                                               = ""                      # The id of the class, within the above group
         self.group_version                                          = ""                      # The version of the group
@@ -61,10 +62,9 @@ class CppClassDeclarationGenerator():
         self.header_version_field                                   = ""
         self.header_type_field                                      = ""
 
-        self.conditions : typing.Dict[str, list]                    = {}                      # Stores a list of condition fields
         self.size_to_arrays : typing.Dict[str, typing.List[str]]    = {}                      # For each variable used as an array size, stores the list of arrays which depend on that variable 
 
-        self.__name_to_enum                                         = user_types.name_to_enum # Dict of all enums
+        self.__name_to_enum                                         = user_types.name_to_enum  # Dict of all enums
         self.__name_to_alias                                        = user_types.name_to_alias # Dict of all user defined types
         self.__name_to_class                                        = class_decls
                     
@@ -78,9 +78,9 @@ class CppClassDeclarationGenerator():
 
         self.__prettyprinter                                        = prettyprinter
 
-        result, result_str = self.__find_condition_fields()
-        if result != YamlFieldCheckResult.OK:
-            return result, result_str
+        #result, result_str = self.__find_condition_fields()
+        #if result != YamlFieldCheckResult.OK:
+        #    return result, result_str
 
         #TODO: Disabled for now due to incompatibility with NEM conditional arrays, enable later on.
         #      Perhaps add command line option for generating size fields or not.
@@ -170,6 +170,7 @@ class CppClassDeclarationGenerator():
             size_var   = field["size"]
             array_name = field["name"]
 
+            #TODO: add check that size_var is an int and that var is defined before array
             if size_var not in self.size_to_arrays:
                 self.size_to_arrays[ size_var ] = []
 
@@ -186,7 +187,7 @@ class CppClassDeclarationGenerator():
         and inherited methods are added as 'override'.
         """
 
-        conditions = self.conditions.copy()
+        #conditions = self.conditions.copy()
 
         self.__header_code_output  = f'\n\nclass {self.class_name} : public ICatbuffer\n{{\npublic:\n' # class definition
         self.__header_code_output += f'\t{self.class_name}(){{ }};\n'      # constructor
@@ -211,16 +212,26 @@ class CppClassDeclarationGenerator():
                 field["disposition"] = types[0]
                 field_type           = TypeConverter.convert(types[1])
             else:
-                field_type  = TypeConverter.convert(types[0])
+                field_type           = TypeConverter.convert(types[0])
 
             field["type"] = field_type
 
             if field_type not in CppFieldGenerator.builtin_types and \
                field_type not in self.__name_to_enum and \
                field_type not in self.__name_to_alias and \
-               field_type not in self.__name_to_class:
+               field_type not in self.__name_to_class and \
+               field_type != "varint":
                 return YamlFieldCheckResult.TYPE_UNKNOWN, f"\n\nError: Type '{field_type}' in struct '{self.class_name}' not defined or incomplete!\n\n"
-                
+
+            name = field["name"] if "name" in field else ""
+
+            # check if name already declared
+            if name in self.member_vars:
+                return YamlFieldCheckResult.NAME_REDEFINED, f"\n\nError: Same field name '{name}' declared multiple times in struct '{self.class_name}'!\n\n"
+            elif name: # save as member var
+                self.member_vars[name] = (idx, field_type)
+
+
             if "disposition" in field:
 
                 disposition = field["disposition"]
@@ -231,7 +242,7 @@ class CppClassDeclarationGenerator():
                         return result, result_str
 
                     #generate
-                    self.__header_code_output += CppFieldGenerator.gen_const_field( field_type, field["name"], field["value"], comments )
+                    self.__header_code_output += CppFieldGenerator.gen_const_field( field_type, name, field["value"], comments )
 
                 elif( "struct_type" == disposition ):
                     self.group_type    = field_type
@@ -243,7 +254,7 @@ class CppClassDeclarationGenerator():
                     self.header_version_field = field["version_field"] if "version_field" in field else "" 
 
                     self.__header_code_output += CppFieldGenerator.gen_const_field( field_type, "TRANSACTION_TYPE",    self.group_id,      comments )
-                    self.__header_code_output += CppFieldGenerator.gen_const_field( "uint8_t", "TRANSACTION_VERSION", self.group_version, comments )
+                    self.__header_code_output += CppFieldGenerator.gen_const_field( "uint8_t",  "TRANSACTION_VERSION", self.group_version, comments )
 
                 elif( "inline" == disposition ):
                     # check fields
@@ -270,7 +281,7 @@ class CppClassDeclarationGenerator():
                         return result, result_str
 
                     # generate
-                    self.__header_code_output += CppFieldGenerator.gen_array_field( field_type, field["name"], comments )
+                    self.__header_code_output += CppFieldGenerator.gen_array_field( field_type, name, comments )
                     self.__lib_includes.add("#include <vector>")
 
                 elif( "array_sized" == disposition ):
@@ -283,7 +294,7 @@ class CppClassDeclarationGenerator():
                     self.__dependency_checks.append(field) # check again later when all classes are declared
 
                     # generate
-                    self.__header_code_output += CppFieldGenerator.gen_array_sized_field( field["name"], comments )
+                    self.__header_code_output += CppFieldGenerator.gen_array_sized_field( name, comments )
                     self.__lib_includes.add("#include <vector>")
                     self.__lib_includes.add("#include <memory>")
 
@@ -294,50 +305,27 @@ class CppClassDeclarationGenerator():
                         return result, result_str
 
                     # generate
-                    self.__header_code_output += CppFieldGenerator.gen_array_fill_field( field_type, field["name"], comments )
+                    self.__header_code_output += CppFieldGenerator.gen_array_fill_field( field_type, name, comments )
                     self.__lib_includes.add("#include <vector>")
 
                 else:
                     return YamlFieldCheckResult.DISPOSITION_INVALID, f"\n\nERROR: Invalid disposition '{disposition}' in struct '{self.class_name}'!\n\n"
 
             else:
-                if "condition" in field: # generate condition field
-                    cond_var = field["condition"]
+                # check name exists
+                if not name:
+                    return YamlFieldCheckResult.NAME_MISSING, "\n\nError: Missing 'name' key for field in struct '{self.class_name}'!\n\n"
 
-                    # check cond var has been defined #TODO: Disabled for now. Enable when adding Enums
-#                    if cond_var not in self.member_vars:
-#                        return DeclGenResult.CONDITION_VAR_NOT_DEFINED, f"\n\nError: Condition variable '{cond_var}' not defined in struct '{self.class_name}'!\n\n"
-                    #self.__consistency_checks.append(field) # check again later when all classes are declared
+                # don't generate field if var is the size of an array (in that case the vector 'size()' variable is used instead)
+                if name in self.size_to_arrays:
+                    continue
 
-                    if cond_var in conditions:
-                        self.__header_code_output += CppFieldGenerator.gen_condition_field( cond_var, conditions[cond_var], self.member_vars )
-                        self.__lib_includes.add("#include <vector>")
-                        del conditions[cond_var]
-                        
-                else: # generate normal field
-                    name = field["name"] if "name" in field else ""
-                    size = field["size"] if "size" in field else 0
+                # check that condition variable is a class member variable
+                if "condition" in field and field["condition"] not in self.member_vars:
+                    return YamlFieldCheckResult.CONDITION_VAR_NOT_DEFINED, f"\n\nError: Condition variable '{field['condition']}' not defined in struct '{self.class_name}'!\n\n"
 
-                    # check name exists
-                    if not name:
-                        return YamlFieldCheckResult.NAME_MISSING, "\n\nError: Missing 'name' key for field in struct '{self.class_name}'!\n\n"
-
-                    # check name not declared yet
-                    if name in self.member_vars:
-                        return YamlFieldCheckResult.NAME_REDEFINED, f"\n\nError: Same field name '{name}' declared multiple times in struct '{self.class_name}'!\n\n"
-
-
-                    # dont generate field if var is the size of an array (in that case the vector 'size()' variable is used instead)
-                    if name in self.size_to_arrays:
-                        continue
-
-                    # generate code
-                    self.__header_code_output += CppFieldGenerator.gen_normal_field( field_type, name, size, comments )
-
-
-            # save as member var
-            if "name" in field:
-                self.member_vars[field["name"]] = (idx, field_type)
+                # generate code
+                self.__header_code_output += CppFieldGenerator.gen_normal_field( field_type, name, comments )
 
 
             # Add include
@@ -345,7 +333,7 @@ class CppClassDeclarationGenerator():
                 self.__includes.add(f'#include "{field_type}.h"')
 
         self.__header_code_output += "\n};"
-    
+
         return YamlFieldCheckResult.OK, ""
 
 

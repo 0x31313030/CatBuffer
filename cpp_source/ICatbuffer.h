@@ -20,7 +20,8 @@ public:
 
 
   /**
-   * Takes the transaction fields and deserializes them into a raw buffer
+   * Takes the transaction fields and deserializes them into a raw buffer. Note that 
+   * the size of the buffer has to be at least the same size as returned by 'Size()'.
    *
    * @param[in] buffer  The raw buffer where fields will be serialized
    * @return            True if buffer contained enough data to deserialize all fields
@@ -29,7 +30,7 @@ public:
 
 
   /**
-   * Returns the size of catbuffer in bytes, when serialized
+   * Returns the size of catbuffer in bytes, when serialized.
    *
    * @return  Byte size of catbuffer
    */

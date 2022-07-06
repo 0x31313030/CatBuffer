@@ -20,7 +20,6 @@ class TestYamlFieldErrorDetection( unittest.TestCase ):
         self.assertEqual( result, pass_result )
 
 
-    # TODO: rewrite when disposition key is deprecated 
     def test_invalid_disposition_is_detected(self):
         fields = [{ 'name'        : 'test_var',
                     'type'        : 'uint8',

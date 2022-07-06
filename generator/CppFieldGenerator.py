@@ -81,7 +81,7 @@ class CppFieldGenerator():
 
 
     @staticmethod
-    def gen_reserved_field( type: str, name: str, size: int = 0, comment: str = "" ) -> str:
+    def gen_reserved_field( type: str, name: str, comment: str = "" ) -> str:
         """
         Takes a field dict like the one below:
 
@@ -99,11 +99,11 @@ class CppFieldGenerator():
             ------------------------------------------------------------------------------
         """
 
-        return CppFieldGenerator.gen_normal_field( type, name, size, comment )
+        return CppFieldGenerator.gen_normal_field( type, name, comment )
 
 
     @staticmethod
-    def gen_normal_field( type: str, name: str, size: int = 0, comments: str = "") -> str:
+    def gen_normal_field( type: str, name: str, comments: str = "" ) -> str:
         """
         Takes a field dict like the ones below:
 
@@ -118,18 +118,13 @@ class CppFieldGenerator():
             -------------------         
             MosaicNonce mNonce;         
             -------------------            
-
-        or :
-             - uint8_t name[size];' (if 'type' is byte) 
-
-             - uint32_t name; (if 'type' is in 'builtin_types')
         """
 
         name   = CppFieldGenerator.convert_to_field_name( name )
         output = ""
 
-        if( "byte" == type ):
-            output = f'\tuint8_t {name}[{size}];'
+        if( "varint" == type ):
+            output = f'\tuint64_t {name}; // varint field'
         else:
             output = f'\t{type} {name};'
 
@@ -209,28 +204,3 @@ class CppFieldGenerator():
         """
 
         return CppFieldGenerator.gen_array_field( type, name, comments )
-
-
-    # TODO: Should ideally disappear by changing the schemas
-    @staticmethod
-    def gen_condition_field( name: str, fields: dict, member_vars ):
-        """
-        TODO: DOCUMENT!!!
-        """
-
-        output = ""
-        if len(fields) > 1 and name not in member_vars:
-            output += f'\tunion\n\t{{\n'
-
-        for field in fields:
-            output += f'\t\t{field["type"]} {CppFieldGenerator.convert_to_field_name(field["name"])};'
-            
-            if "comments" in field:
-                output += f'// {field["comments"]}'
-                
-            output += '\n'
-
-        if len(fields) > 1 and name not in member_vars:
-            output += f'\t}} {CppFieldGenerator.convert_to_field_name(name)}_union;\n\n'
-
-        return output

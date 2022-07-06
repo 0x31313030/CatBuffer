@@ -156,7 +156,7 @@ class YamlFieldChecker():
 
         if not size_var.isdigit():
             _, size_var_type = member_vars[size_var]
-            if size_var_type not in CppFieldGenerator.builtin_types:
+            if size_var_type not in CppFieldGenerator.builtin_types and size_var_type != "varint":
                 return YamlFieldCheckResult.ARRAY_SIZE_VAR_NOT_BUILTIN_TYPE, f"\n\nError: Array '{field['name']}' size variable '{size_var}' type '{size_var_type}' not an integer type in struct '{class_name}'!\n\n"
 
         # TODO: move this test to ConsistencyChecker!!

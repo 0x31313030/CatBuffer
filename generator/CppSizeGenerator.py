@@ -16,8 +16,12 @@ class CppSizeGenerator():
     def normal_field( self, var_type: str, var_name: str ) -> str:
         var_name = CppFieldGenerator.convert_to_field_name(var_name)
 
-        if var_type in self.__name_to_alias or var_type in self.__name_to_enum or var_type in CppFieldGenerator.builtin_types:
+        if var_type in self.__name_to_alias or \
+           var_type in self.__name_to_enum or \
+           var_type in CppFieldGenerator.builtin_types:
             self.__code_output += f'\tsize += sizeof({var_type}); //< {var_name}\n'
+        elif var_type == "varint":
+            self.__code_output += f'\tsize += sizeVarint( {var_name} ); \n'
         else:
             self.__code_output += f'\tsize += {var_name}.Size();\n'
 
@@ -31,7 +35,10 @@ class CppSizeGenerator():
         if arr_type in self.__name_to_enum or arr_type in self.__name_to_alias or arr_type in CppFieldGenerator.builtin_types:
             self.__code_output += f'\tsize += sizeof({arr_type})*{arr_name}.size(); //< {arr_name}\n'
         else:            
-            self.__code_output += f'\tif( {arr_name}.size() ){{ size += {arr_name}.size()*{arr_name}[0].Size(); }}\n' #TODO: this is assuming that element sizes are all the same. Maybe do a for loop instead.
+            self.__code_output += f'\tfor(size_t i=0; i < {arr_name}.size(); ++i )'
+            self.__code_output += f'\t{{'
+            self.__code_output += f'\t\tsize += {arr_name}[i].Size();'
+            self.__code_output += f'\t}}'
 
 
 

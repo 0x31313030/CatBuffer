@@ -37,13 +37,29 @@ class CppDeserializationGenerator():
                 self.__code_output += f'\t{var_type} tmp{member_name[1:]} = *( ({var_type}*) ptr );\n\n'
             else:
                 self.__code_output += f'\t{member_name} = *( ({var_type}*) ptr );\n\n'
+
+        elif var_type == "varint":
+            self.__add_succ_var = True
+            self.__code_output += f'\tstd::tie({member_name}, succ) = readVarint(buffer); if(!succ){{ return false; }}\n'
+
         else:
             self.__add_succ_var = True
             self.__code_output += f'\tsucc = {member_name}.Deserialize( buffer ); if(!succ){{ return false; }}\n'
 
 
+    def __insert_condition_pre( self, condition: str, code_output: str ) -> typing.Tuple[str, str] :
+        if condition:
+            return "\t", f'\tif( {condition} )\n\t{{\n'
 
-    def array_field( self, var_type: str, var_name: str, size_var: str, size_type: str ) -> str:
+        return "", ""
+
+    def __insert_condition_post( self, condition: str, code_output: str ) -> str:
+        if condition:
+            return "\t}\n\n"
+        return ""
+ 
+
+    def array_field( self, var_type: str, var_name: str, size_var: str, size_type: str, condition: str ) -> str:
 
         name = CppFieldGenerator.convert_to_field_name(var_name)
 
@@ -52,21 +68,28 @@ class CppDeserializationGenerator():
             #size_var = "tmp" + size_var[:1].upper() + size_var[1:] # name of tmp variable containing size of array
             size_var = CppFieldGenerator.convert_to_field_name(size_var) #TODO: use above line instead when NEM incompatibility has been solved
 
+            if size_type == "varint":
+                size_type = "uint64_t"
 
-            self.__code_output += f'\n\tif( {size_var} != std::numeric_limits<{size_type}>::max() )\n\t{{'
-        self.__code_output += f'\n\t\t{name}.resize({size_var});'
-        self.__code_output += f'\n\t\t{name}.shrink_to_fit();'
-        self.__code_output += f'\n\t\tfor( size_t i=0; i<{size_var}; ++i )\n'
-        self.__code_output += f'\t\t{{\n'
+
+
+        tab, condition_output_pre = self.__insert_condition_pre( condition, self.__code_output )
+
+        self.__code_output += condition_output_pre
+        self.__code_output += f'{tab}\t{name}.resize({size_var});\n'
+        self.__code_output += f'{tab}\t{name}.shrink_to_fit();\n\n'
+        self.__code_output += f'{tab}\tfor( size_t i=0; i<{size_var}; ++i )\n'
+        self.__code_output += f'{tab}\t{{\n'
 
         arr_name_with_idx = var_name+"[i]"
-        self.__code_output += "\t"
-        self.normal_field(var_type, arr_name_with_idx )
+        self.__code_output += f'{tab}\t'
 
-        self.__code_output += f'\t\t}}\n\n'
+        self.normal_field(var_type, arr_name_with_idx)
 
-        if not str(size_var).isdigit():
-            self.__code_output += f'\t}}\n'
+        self.__code_output += f'{tab}\t}}\n\n'
+        self.__code_output += self.__insert_condition_post( condition, self.__code_output)
+
+
 
 
     def inline_field( self, var_name: str ):
@@ -139,18 +162,23 @@ class CppDeserializationGenerator():
 
 
 
-    def condition_field( self, var_name: str, var_type: str, condition: str, union_name: str = "" ):
-        name   = var_name
-        if union_name:
-            var_name = CppFieldGenerator.convert_to_field_name(var_name)
-            name = f'{union_name}.{var_name}'
-        else:
+    def condition_field( self, var_name: str, var_type: str, condition_var: str, condition: str ):
+
+        if condition_var != var_name:
+            name = var_name
             self.__code_output += f'\n\tif( {condition} )\n\t{{\n\t'
 
-        self.normal_field( var_type, name )
+            self.normal_field( var_type, name )
 
-        if not union_name:
-           self.__code_output += "\t}\n\n"
+            self.__code_output += "\t}\n\n"
+        else:
+            member_name = CppFieldGenerator.convert_to_field_name(var_name)
+            self.__code_output += f'\n\tif( buffer.RemainingSize() < sizeof({var_type}) ) {{ return false; }}\n'
+            self.__code_output += f'\tptr = buffer.GetOffsetPtr();\n'
+            self.__code_output += f'\t{member_name} = *( ({var_type}*) ptr );\n'
+            self.__code_output += f'\tif( {condition} )\n\t{{\n\t'
+            self.__code_output += f'\tbuffer.MoveOffset( sizeof({var_type}) );\n'
+            self.__code_output += "\t}\n\n"
 
 
 

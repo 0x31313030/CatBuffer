@@ -29,16 +29,27 @@ class CppSerializationGenerator():
     def normal_field( self, var_type: str, var_name: str ) -> str:
         member_name = CppFieldGenerator.convert_to_field_name(var_name)
 
-        if var_type in self.__name_to_alias or var_type in self.__name_to_enum or var_type in CppFieldGenerator.builtin_types:
+        if var_type in self.__name_to_alias or \
+           var_type in self.__name_to_enum or \
+           var_type in CppFieldGenerator.builtin_types:
             self.__add_ptr_var = True
             self.__code_output += f'\tptr = buffer.GetOffsetPtrAndMove( sizeof({var_type}) ); if(!ptr){{ return false; }}\n'
 
             if var_name in self.__size_to_arrays:
                 array_name = self.__size_to_arrays[var_name][0]
                 array_name = CppFieldGenerator.convert_to_field_name(array_name)
+
                 self.__code_output += f'\t*( ({var_type}*) ptr ) = {array_name}.size();\n\n'
             else:
                 self.__code_output += f'\t*( ({var_type}*) ptr ) = {member_name};\n\n'
+
+        elif var_type == "varint":
+            if var_name in self.__size_to_arrays:
+                array_name = self.__size_to_arrays[var_name][0]
+                array_name = CppFieldGenerator.convert_to_field_name(array_name)
+                self.__code_output += f'\twriteVarint( {array_name}.size(), buffer );\n\n'
+            else:
+                self.__code_output += f'\twriteVarint( {member_name}, buffer );\n\n'
         else:
             self.__add_succ_var = True
             self.__code_output += f'\tsucc = {member_name}.Serialize( buffer ); if( !succ ){{ return false; }}\n'
