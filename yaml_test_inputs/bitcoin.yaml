@@ -109,7 +109,7 @@
       condition: Flag
       condition_operation: equals
       condition_value: 256
-      comment: Only present if the value is 256 and is used to indicate whether there is witness data 
+      comment: Only present if the value is 256 (is used to indicate whether there is witness data) 
 
     - name: NumInputs
       type: varint

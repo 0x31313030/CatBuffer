@@ -51,7 +51,7 @@ class CppClassDeclarationGenerator():
         self.class_name                                             = class_name
         self.fields                                                 = fields
         self.comment                                                = comment
-        self.member_vars : typing.Dict[str, typing.Tuple[int, str]] = {}                      # Dict to store variable name to type
+        self.member_vars : typing.Dict[str, typing.Tuple[int, str]] = {}                      # Dict of variable name to type (tupple gives index of variable and type)
 
         #TODO: re-think this naming convention! confusing with enum and struct header
         self.group_type                                             = ""                      # The enum group that the class belongs to (if any)
@@ -64,8 +64,7 @@ class CppClassDeclarationGenerator():
 
         self.size_to_arrays : typing.Dict[str, typing.List[str]]    = {}                      # For each variable used as an array size, stores the list of arrays which depend on that variable 
 
-        self.__name_to_enum                                         = user_types.name_to_enum  # Dict of all enums
-        self.__name_to_alias                                        = user_types.name_to_alias # Dict of all user defined types
+        self.__user_types                                           = user_types
         self.__name_to_class                                        = class_decls
                     
         self.__lib_includes : typing.Set[str]                       = set()                   # Set of all C++ library includes
@@ -77,10 +76,6 @@ class CppClassDeclarationGenerator():
         self.__dependency_checks : typing.List[dict]                = list()
 
         self.__prettyprinter                                        = prettyprinter
-
-        #result, result_str = self.__find_condition_fields()
-        #if result != YamlFieldCheckResult.OK:
-        #    return result, result_str
 
         #TODO: Disabled for now due to incompatibility with NEM conditional arrays, enable later on.
         #      Perhaps add command line option for generating size fields or not.
@@ -110,40 +105,6 @@ class CppClassDeclarationGenerator():
                     return result, result_str
 
         return YamlDependencyCheckerResult.OK, ""
-
-
-    def __find_condition_fields( self ):
-        """
-        Finds condition fields and stores them in 'self.conditions'.
-        Fields which share the same condition are grouped together 
-        in the same list. Needed for doing conditions and unions 
-        later.
-        """
-
-        for field in self.fields:
-
-            # skip if not condition
-            if( "condition" not in field ):
-                continue
-            
-            result, result_str = YamlFieldChecker.condition(self.class_name, field)
-            if YamlFieldCheckResult.OK != result:
-                return result, result_str
-
-            # save field
-            cond_name = field["condition"]
-            if cond_name not in self.conditions:
-                self.conditions[ cond_name ] = []
-
-           
-            self.conditions[ cond_name ].append( field )
-
-            # add include if type is a class
-            type = field[ "type" ]
-            if type in self.__name_to_class:               
-                self.__include_code_output += f'#include "{type}.h"\n'
-
-        return YamlFieldCheckResult.OK, ""
 
 
     def __find_array_size_fields( self ):
@@ -187,8 +148,6 @@ class CppClassDeclarationGenerator():
         and inherited methods are added as 'override'.
         """
 
-        #conditions = self.conditions.copy()
-
         self.__header_code_output  = f'\n\nclass {self.class_name} : public ICatbuffer\n{{\npublic:\n' # class definition
         self.__header_code_output += f'\t{self.class_name}(){{ }};\n'      # constructor
         self.__header_code_output += f'\t~{self.class_name}(){{ }};\n\n\n' # destructor
@@ -217,8 +176,8 @@ class CppClassDeclarationGenerator():
             field["type"] = field_type
 
             if field_type not in CppFieldGenerator.builtin_types and \
-               field_type not in self.__name_to_enum and \
-               field_type not in self.__name_to_alias and \
+               field_type not in self.__user_types.name_to_enum and \
+               field_type not in self.__user_types.name_to_alias and \
                field_type not in self.__name_to_class and \
                field_type != "varint":
                 return YamlFieldCheckResult.TYPE_UNKNOWN, f"\n\nError: Type '{field_type}' in struct '{self.class_name}' not defined or incomplete!\n\n"
@@ -237,7 +196,7 @@ class CppClassDeclarationGenerator():
                 disposition = field["disposition"]
                 if( "const" == disposition ):
                     # check fields
-                    result, result_str = YamlFieldChecker.const( self.class_name, field, self.__name_to_enum )
+                    result, result_str = YamlFieldChecker.const( self.class_name, field, self.__user_types.name_to_enum )
                     if YamlFieldCheckResult.OK != result:
                         return result, result_str
 
@@ -321,8 +280,10 @@ class CppClassDeclarationGenerator():
                     continue
 
                 # check that condition variable is a class member variable
-                if "condition" in field and field["condition"] not in self.member_vars:
-                    return YamlFieldCheckResult.CONDITION_VAR_NOT_DEFINED, f"\n\nError: Condition variable '{field['condition']}' not defined in struct '{self.class_name}'!\n\n"
+                if "condition" in field:
+                    result, result_str = YamlFieldChecker.condition(self.class_name, field, self.member_vars, self.__user_types)
+                    if YamlFieldCheckResult.OK != result:
+                        return result, result_str
 
                 # generate code
                 self.__header_code_output += CppFieldGenerator.gen_normal_field( field_type, name, comments )

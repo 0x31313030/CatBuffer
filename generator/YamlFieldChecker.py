@@ -3,33 +3,35 @@ import numbers
 from enum import Enum, auto
 
 from .CppFieldGenerator import CppFieldGenerator
-from .CppTypesGenerator import EnumDef
+from .CppTypesGenerator import EnumDef, CppTypesGenerator
 
 class YamlFieldCheckResult(Enum):
-    OK                              = auto()  # Everything went well
-    DISPOSITION_INVALID             = auto()  # Disposition is not known
-           
-    TYPE_MISSING                    = auto()  # The type field has not been defined
-    TYPE_UNKNOWN                    = auto()  # The type is unknown
-           
-    NAME_MISSING                    = auto()  # The name field has not been defined
-    NAME_REDEFINED                  = auto()  # The same name has been used for more than one variable
-    
-    CONDITION_VAR_NOT_DEFINED       = auto()  # The condition variable has not been defined
-    CONDITION_OP_MISSING            = auto()  # The 'condition_operation' key is missing
-    CONDITION_OP_UNKNOWN            = auto()  # The condition operator is not known/supported
-    CONDITION_VALUE_MISSING         = auto()  # The 'condition_value' key is missing
+    OK                               = auto()  # Everything went well
+    DISPOSITION_INVALID              = auto()  # Disposition is not known
+            
+    TYPE_MISSING                     = auto()  # The type field has not been defined
+    TYPE_UNKNOWN                     = auto()  # The type is unknown
+            
+    NAME_MISSING                     = auto()  # The name field has not been defined
+    NAME_REDEFINED                   = auto()  # The same name has been used for more than one variable
      
-    ARRAY_SIZED_HEADER_MISSING      = auto()
-    ARRAY_SIZED_HEADER_TYPE_MISSING = auto()
+    CONDITION_VAR_NOT_DEFINED        = auto()  # The condition variable has not been defined
+    CONDITION_OP_MISSING             = auto()  # The 'condition_operation' key is missing
+    CONDITION_OP_UNKNOWN             = auto()  # The condition operator is not known/supported
+    CONDITION_VALUE_MISSING          = auto()  # The 'condition_value' key is missing
+    CONDITION_VALUE_NOT_DEFINED      = auto()  # The value of 'condition_value' has not been defined elsewhere 
+    CONDITION_WITH_ARRAY_ALIAS       = auto()  # Array alias used as left or right hand side
 
-    ARRAY_SIZE_MISSING              = auto()
-    ARRAY_SIZE_UNKNOWN              = auto()
-    ARRAY_SIZE_VAR_NOT_BUILTIN_TYPE = auto()
-
-    VALUE_MISSING                   = auto()
-    VALUE_NOT_NUMERIC_NOR_ENUM      = auto() 
-    VALUE_AND_TYPE_MISMATCH         = auto()
+    ARRAY_SIZED_HEADER_MISSING       = auto()
+    ARRAY_SIZED_HEADER_TYPE_MISSING  = auto()
+ 
+    ARRAY_SIZE_MISSING               = auto()
+    ARRAY_SIZE_UNKNOWN               = auto()
+    ARRAY_SIZE_VAR_NOT_BUILTIN_TYPE  = auto()
+ 
+    VALUE_MISSING                    = auto()
+    VALUE_NOT_NUMERIC_NOR_ENUM       = auto() 
+    VALUE_AND_TYPE_MISMATCH          = auto()
 
 
 
@@ -48,7 +50,9 @@ class YamlFieldChecker():
 
 
     @staticmethod
-    def condition( class_name: str, field: dict ) -> typing.Tuple[YamlFieldCheckResult, str]:
+    def condition( class_name: str, field: dict, member_vars : typing.Dict[str, typing.Tuple[int, str]], user_types: CppTypesGenerator ) -> typing.Tuple[YamlFieldCheckResult, str]:
+
+        # check mandatory fields exists
         if "name" not in field:
             return YamlFieldCheckResult.NAME_MISSING, f"\n\nError: missing 'name' key for field in struct '{class_name}'!\n\n"
 
@@ -58,16 +62,44 @@ class YamlFieldChecker():
         if "condition_operation" not in field:
             return YamlFieldCheckResult.CONDITION_OP_MISSING, f"\n\nError: Condition operator not defined for condition field '{field['name']}'' in struct '{class_name}'!\n\n"
 
+        if "condition_value" not in field:
+            return YamlFieldCheckResult.CONDITION_VALUE_MISSING, f"\n\nError: Condition operator not defined for condition field '{field['name']}' in struct '{class_name}'!\n\n"
+
+
         # check operation is supported
         cond_op = field["condition_operation"]
         if cond_op not in ["not equals", "equals"]:
             return YamlFieldCheckResult.CONDITION_OP_UNKNOWN, f"\n\nError: Condition operator '{cond_op}' not valid for const field '{field['name']}' in struct '{class_name}'!\n\n"
 
-        if "condition_value" not in field:
-            return YamlFieldCheckResult.CONDITION_VALUE_MISSING, f"\n\nError: Condition operator not defined for condition field '{field['name']}' in struct '{class_name}'!\n\n"
 
-        #TODO: once Unions have been implemented, check that field["condition_value"] is 
-        # either a number or an enum, and that the enum is same type as field["condition"]
+        # check if 'condition_value' is either an int literal, an int variable or an enum
+        lhs_value      = field["condition"]
+        rhs_value      = field["condition_value"]
+        lhs_is_member  = lhs_value in member_vars
+        _, lhs_type    = member_vars[ lhs_value ] if lhs_is_member else (0,"")
+        rhs_is_literal = isinstance(rhs_value, int)
+        lhs_is_enum    = lhs_type in user_types.name_to_enum
+        rhs_is_enum    = lhs_is_enum and rhs_value in user_types.name_to_enum[lhs_type].values
+        
+        if not rhs_is_literal and rhs_value not in member_vars and not rhs_is_enum: #and cond_value not in user_types.name_to_enum[cond_type].values:
+            return YamlFieldCheckResult.CONDITION_VALUE_NOT_DEFINED, f"\n\nError: Condition value '{field['condition_value']}' not defined in struct '{class_name}'!\n\n"
+
+
+        # check if left hand side of conditional is a defined variable
+        if not lhs_is_member:
+            return YamlFieldCheckResult.CONDITION_VAR_NOT_DEFINED, f"\n\nError: Condition variable '{field['condition']}' not defined in struct '{class_name}'!\n\n"
+
+
+        # check that left hand side (lhs) is not an array alias
+        if lhs_type in user_types.name_to_alias and user_types.name_to_alias[lhs_type].size != 1:
+            return YamlFieldCheckResult.CONDITION_WITH_ARRAY_ALIAS, f"\n\nError: Condition variable '{lhs_value}' is an array alias!\n\n"
+
+
+        # check that right hand side (rhs) is not an array alias
+        rhs_is_member  = rhs_value in member_vars
+        _, rhs_type    = member_vars[ rhs_value ] if rhs_is_member else (0,"")
+        if rhs_type in user_types.name_to_alias and user_types.name_to_alias[rhs_type].size != 1:
+            return YamlFieldCheckResult.CONDITION_WITH_ARRAY_ALIAS, f"\n\nError: Condition variable '{lhs_value}' is an array alias!\n\n"
 
         return YamlFieldCheckResult.OK, ""
 

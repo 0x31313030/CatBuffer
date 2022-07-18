@@ -41,6 +41,7 @@ def generate( input_data: list, gen_output_folder: str, generate_print_methods: 
     print("\nGenerating class declarations:")
     for elem in input_data:
         if 'struct'== elem['type']:
+            print("\t"+elem["name"])
 
             # Generate class declaration
             comments           = elem['comments'] if "comments" in elem else ""
@@ -55,7 +56,6 @@ def generate( input_data: list, gen_output_folder: str, generate_print_methods: 
             class_dec_gen.write_file( gen_output_folder+f'/{class_name}.h' )
 
             class_decls[elem['name']] = class_dec_gen
-            print("\t"+elem["name"])
 
 
     for class_name, decl in class_decls.items():

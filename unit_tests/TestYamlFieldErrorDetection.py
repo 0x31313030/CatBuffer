@@ -1,7 +1,7 @@
 import unittest
 from generator.CppClassDeclarationGenerator import CppClassDeclarationGenerator, YamlFieldCheckResult
 from generator.YamlFieldChecker import YamlFieldCheckResult
-from generator.CppTypesGenerator import CppTypesGenerator, EnumDef
+from generator.CppTypesGenerator import AliasDef, CppTypesGenerator, EnumDef
 
 
 
@@ -12,6 +12,8 @@ class TestYamlFieldErrorDetection( unittest.TestCase ):
         types = CppTypesGenerator()
         types.name_to_enum["DummyEnum"] = EnumDef( "int8", set() )
         types.name_to_enum["DummyEnum"].values.add("DummyEnumValue")
+        types.name_to_alias["DummyAliasReg"] = AliasDef( "int8", 1 )
+        types.name_to_alias["DummyAliasArr"] = AliasDef( "int8", 9 )
 
         decl = CppClassDeclarationGenerator()
         result, error_str = decl.init( "TestStruct", fields, types, set({"DummyClass"}) )
@@ -59,30 +61,42 @@ class TestYamlFieldErrorDetection( unittest.TestCase ):
 
     # condition tests
     # /////////////////////////////////////////////////////////////////
-    def test_undefined_conditional_operator_detected(self):
-        fields = [{ 
+    def test_conditional_undefined_operator_detected(self):
+        fields = [{
+                    'name': 'cond_var',
+                    'type': 'uint8'
+                  },
+                  { 
                     'name': 'test_var',
                     'type': 'DummyClass',
                     'condition': 'cond_var',
                     #'condition_operation': 'equals',
-                    'condition_value': '0' 
+                    'condition_value': 0 
                   }]
 
         self.check( fields, YamlFieldCheckResult.CONDITION_OP_MISSING )
 
-    def test_missing_conditional_operator_detected(self):
-        fields = [{ 
+    def test_conditional_unknown_operator_detected(self):
+        fields = [{
+                    'name': 'cond_var',
+                    'type': 'uint8'
+                  },
+                  { 
                     'name': 'test_var',
                     'type': 'DummyClass',
                     'condition': 'cond_var',
-                    'condition_operation': 'invalid op',
-                    'condition_value': '0' 
+                    'condition_operation': 'invalid op', # error
+                    'condition_value': 0 
                   }]
 
         self.check( fields, YamlFieldCheckResult.CONDITION_OP_UNKNOWN )
         
-    def test_missing_condition_value_detected(self):
-        fields = [{ 
+    def test_conditional_missing_value_detected(self):
+        fields = [{
+                    'name': 'cond_var',
+                    'type': 'uint8'
+                  },
+                  {
                     'name': 'test_var',
                     'type': 'DummyClass',
                     'condition': 'cond_var',
@@ -92,17 +106,106 @@ class TestYamlFieldErrorDetection( unittest.TestCase ):
 
         self.check( fields, YamlFieldCheckResult.CONDITION_VALUE_MISSING )
 
-    # TODO: disabled for now, enable when adding Enums
-    def disable_test_undefined_condition_var_detected(self):
-        fields = [{ 
+    def test_conditional_undefined_var_detected(self):
+        fields = [{
                     'name': 'test_var',
                     'type': 'DummyClass',
                     'condition': 'cond_var',
                     'condition_operation': 'equals',
-                    'condition_value': '0' 
+                    'condition_value': 0
                   }]
 
         self.check( fields, YamlFieldCheckResult.CONDITION_VAR_NOT_DEFINED )
+
+    def test_conditional_undefined_value_detected(self):
+        fields = [{
+                    'name': 'cond_var',
+                    'type': 'uint8'
+                  },
+            
+                  {
+                    'name': 'test_var',
+                    'type': 'DummyClass',
+                    'condition': 'cond_var',
+                    'condition_operation': 'equals',
+                    'condition_value': 'undefined_var_value' # error
+                  }]
+
+        self.check( fields, YamlFieldCheckResult.CONDITION_VALUE_NOT_DEFINED )
+
+    def test_conditional_with_wrong_enum_detected(self):
+        fields = [
+                  {
+                    'name': 'cond_var',
+                    'type': 'DummyEnum'
+                  },
+            
+                  {
+                    'name': 'test_var',
+                    'type': 'DummyClass',
+                    'condition': 'cond_var',
+                    'condition_operation': 'equals',
+                    'condition_value': 'NoneExistingEnum' # error
+                  }]
+
+        self.check( fields, YamlFieldCheckResult.CONDITION_VALUE_NOT_DEFINED )
+
+
+    def test_conditional_with_correct_enum_is_accepted(self):
+        fields = [
+                  {
+                    'name': 'cond_var',
+                    'type': 'DummyEnum'
+                  },
+            
+                  {
+                    'name': 'test_var',
+                    'type': 'DummyClass',
+                    'condition': 'cond_var',
+                    'condition_operation': 'equals',
+                    'condition_value': 'DummyEnumValue' 
+                  }]
+
+        self.check( fields, YamlFieldCheckResult.OK )
+
+    def test_conditional_with_array_alias_lhs_not_accepted(self):
+        fields = [
+                  {
+                    'name': 'cond_var',
+                    'type': 'DummyAliasArr'
+                  },
+            
+                  {
+                    'name': 'test_var',
+                    'type': 'DummyClass',
+                    'condition': 'cond_var', # error
+                    'condition_operation': 'equals',
+                    'condition_value': 123 
+                  }]
+
+        self.check( fields, YamlFieldCheckResult.CONDITION_WITH_ARRAY_ALIAS )
+
+    def test_conditional_with_array_alias_rhs_not_accepted(self):
+        fields = [
+                  {
+                    'name': 'cond_var',
+                    'type': 'int8'
+                  },
+                  {
+                    'name': 'rhs_var',
+                    'type': 'DummyAliasArr'
+                  },
+                  {
+                    'name': 'test_var',
+                    'type': 'DummyClass',
+                    'condition': 'cond_var',
+                    'condition_operation': 'equals',
+                    'condition_value': 'rhs_var' # error
+                  }
+                 ]
+
+        self.check( fields, YamlFieldCheckResult.CONDITION_WITH_ARRAY_ALIAS )
+
     # /////////////////////////////////////////////////////////////////
 
 

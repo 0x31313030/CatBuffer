@@ -12,7 +12,7 @@ class EnumDef:
 @dataclass
 class AliasDef: # aka type alias
     type : str 
-    size : int      # if > 1 then the typedef is a struct with an array of 'size' 
+    size : int      # if > 1 then the typedef is a struct with an array of type 'type' and size 'size' 
     hint : str = "" # hint on how alias should be printed by Print() method (hex, ascii, etc)
 
 class CppTypesGenerator():

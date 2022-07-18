@@ -213,7 +213,7 @@ class CppClassDefinitionGenerator():
         self.__include_code_output += '\n'
 
 
-    def __gen_condition_from_field( self, field: dict) -> str:
+    def __gen_condition_from_field( self, field: dict ) -> str:
         op = ""
 
         if( "not equals" == field["condition_operation"] ):
@@ -224,7 +224,6 @@ class CppClassDefinitionGenerator():
             print(f'Error: unknown condition operator "{field["condition_operation"]}"')
 
         condition_value = field["condition_value"]
-
 
         # if condition variable is an enum change to enum value 
         _, cond_type = self.__class_decl.member_vars[ field["condition"] ]

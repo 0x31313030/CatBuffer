@@ -1,3 +1,5 @@
+# Alias definitions #########################################################
+
 - name: Amount
   type: alias uint64
 
@@ -64,6 +66,7 @@
   type: alias array uint8
   print: hex
 
+#############################################################################
 
 - comments: binary layout for a mosaic
   layout:
@@ -85,6 +88,7 @@
     type: Amount
   name: UnresolvedMosaic
   type: struct
+
 - comments: enumeration of link actions
   name: LinkAction
   type: enum uint8
