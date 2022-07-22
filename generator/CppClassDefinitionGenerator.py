@@ -164,9 +164,9 @@ class CppClassDefinitionGenerator():
                     condition = self.__gen_condition_from_field(field)
 
                     self.__deserializer.condition_field( name, var_type, field["condition"], condition )
-                    self.__serializer.condition_field( name, var_type, condition, "" )
-                    self.__size_generator.condition( name, var_type, condition, "" )
-                    self.__print_generator.condition( name, var_type, condition, "" )
+                    self.__serializer.condition_field( name, var_type, condition )
+                    self.__size_generator.condition( name, var_type, condition )
+                    self.__print_generator.condition( name, var_type, condition )
 
                 else:
                     self.__deserializer.normal_field( var_type, name )

@@ -138,9 +138,10 @@ class CppPrintOutputGenerator():
 
 
 
-    def condition( self, var_name: str, var_type: str, condition: str, union_name: str = "" ):
-        member_name = CppFieldGenerator.convert_to_field_name(var_name)
-        self.__code_output += f'\tstd::cout << tabs << "\t{var_type} " << "{member_name}: " << {member_name} << " // if( {condition} ) {var_type} {member_name}\\n";\n'
+    def condition( self, var_name: str, var_type: str, condition: str ):
+        self.__code_output += f'\n\tif( {condition} )\n\t{{\n\t'
+        self.normal_field( var_type, var_name )
+        self.__code_output += "\t}\n\n"
 
 
 

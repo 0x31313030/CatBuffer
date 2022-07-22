@@ -35,7 +35,7 @@
 
     - name: Nonce
       type: uint32
-      comment: Field that is changed when trying to mine a block 
+      comment: Field that is changed when trying to mine a block
  
 
 

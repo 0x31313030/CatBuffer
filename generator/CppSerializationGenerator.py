@@ -118,18 +118,10 @@ class CppSerializationGenerator():
 
 
 
-    def condition_field( self, var_name: str, var_type: str, condition: str, union_name: str ):
-        name   = var_name
-        if union_name:
-            var_name = CppFieldGenerator.convert_to_field_name(var_name)
-            name = f'{union_name}.{var_name}'
-        else:
-            self.__code_output += f'\n\tif( {condition} )\n\t{{\n\t'
-
-        self.normal_field( var_type, name )
-
-        if not union_name:
-           self.__code_output += "\t}\n\n"
+    def condition_field( self, var_name: str, var_type: str, condition: str ):
+        self.__code_output += f'\n\tif( {condition} )\n\t{{\n\t'
+        self.normal_field( var_type, var_name )
+        self.__code_output += "\t}\n\n"
 
 
     def generate( self ) -> str:

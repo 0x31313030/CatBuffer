@@ -217,7 +217,7 @@ class TestYamlFieldErrorDetection( unittest.TestCase ):
         fields = [{
                    'name'       : 'padding',
                    'type'       : 'uint32',
-                   #'value'      : '0',
+                   #'value'      : 0,
                    'disposition': 'reserved',
                  }]
 
@@ -349,6 +349,20 @@ class TestYamlFieldErrorDetection( unittest.TestCase ):
 #                  }
 #                 ]
 #        self.check( fields, DeclGenResult.ARRAY_SIZE_VAR_DEFINED_AFTER )
+
+
+    def test_array_size_literal_accepted(self):
+
+        fields = [
+                  {
+                    'name':        'test_array',
+                    'size':        '10',
+                    'disposition': 'array',
+                    'type':        'uint64',
+                  }
+                 ]
+        self.check( fields, YamlFieldCheckResult.OK )
+
 
     # /////////////////////////////////////////////////////////////////
 

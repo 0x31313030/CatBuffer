@@ -161,8 +161,8 @@ class CppFieldGenerator():
     @staticmethod
     def gen_array_sized_field( name: str, comment: str ):
         """
-        TODO: explain this. transactions are variable sized and payload size is in bytes)
-
+        An 'array_sized' field is an array where the number of elements is not known, but where the total array size in bytes is known
+        
         Takes a field dict like the one below:
 
             --------------------------------

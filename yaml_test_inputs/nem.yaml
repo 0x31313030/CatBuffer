@@ -1,0 +1,1658 @@
+# Alias definitions #########################################################
+
+- name: Amount
+  type: alias uint64
+
+- name: Height
+  type: alias uint64
+
+- name: Timestamp
+  type: alias uint32
+
+- name: Address
+  size: 40
+  type: alias array uint8
+
+- name: Hash256
+  size: 32
+  type: alias array uint8
+
+- name: PublicKey
+  size: 32
+  type: alias array uint8
+
+- name: Signature
+  size: 64
+  type: alias array uint8
+
+#############################################################################
+
+
+
+# Enum definitions ##########################################################
+
+- name: NetworkType
+  type: enum uint8
+  comment: enumeration of network types
+  values:
+  - comment: main network
+    name: MAINNET
+    value: 104
+  - comment: test network
+    name: TESTNET
+    value: 152
+
+- name: TransactionType
+  type: enum uint32
+  comment: enumeration of transaction types
+  values:
+  - comment: transfer transaction
+    name: TRANSFER
+    value: 257
+  - comment: account key link trasaction alternatively called importance transfer
+      transaction
+    name: ACCOUNT_KEY_LINK
+    value: 2049
+  - comment: multisig account modification transaction alternatively called multisig
+      consignatory modification transaction
+    name: MULTISIG_ACCOUNT_MODIFICATION
+    value: 4097
+  - comment: multisig cosignature transaction alternatively called multisig signature
+      transaction
+    name: MULTISIG_COSIGNATURE
+    value: 4098
+  - comment: multisig transaction
+    name: MULTISIG_TRANSACTION
+    value: 4100
+  - comment: namespace registration transaction alternatively called provision namespace
+      transaction
+    name: NAMESPACE_REGISTRATION
+    value: 8193
+  - comment: mosaic definition transaction alternatively called mosaic definition
+      creation transaction
+    name: MOSAIC_DEFINITION
+    value: 16385
+  - comment: mosaic supply change transaction
+    name: MOSAIC_SUPPLY_CHANGE
+    value: 16386
+
+- name: BlockType
+  type: enum uint32
+  comment: enumeration of block types
+  values:
+  - comment: nemesis block
+    name: NEMESIS
+    value: 4294967295
+  - comment: normal block
+    name: NORMAL
+    value: 1
+
+- name: LinkAction
+  type: enum uint32
+  comment: enumeration of link actions
+  values:
+  - comment: unlink account
+    name: LINK
+    value: 1
+  - comment: link account
+    name: UNLINK
+    value: 2
+
+- name: MosaicTransferFeeType
+  type: enum uint32
+  comment: enumeration of mosaic transfer fee types
+  values:
+  - comment: fee represents an absolute value
+    name: ABSOLUTE
+    value: 1
+  - comment: fee is proportional to a percentile of the transferred mosaic
+    name: PERCENTILE
+    value: 2
+
+- name: MosaicSupplyChangeAction
+  type: enum uint32
+  comment: enumeration of mosaic supply change actions
+  values:
+  - comment: increases the supply
+    name: INCREASE
+    value: 1
+  - comment: decreases the supply
+    name: DECREASE
+    value: 2
+
+- name: MultisigAccountModificationType
+  type: enum uint32
+  comment: enumeration of multisig account modification types
+  values:
+  - comment: add a new cosignatory
+    name: ADD_COSIGNATORY
+    value: 1
+  - comment: delete an existing cosignatory
+    name: DELETE_COSIGNATORY
+    value: 2
+
+- name: MessageType
+  type: enum uint32
+  comment: enumeration of message types this is a hint used by the client but ignored
+    by the server
+  values:
+  - comment: plain message
+    name: PLAIN
+    value: 1
+  - comment: encrypted message
+    name: ENCRYPTED
+    value: 2
+
+- name: TransactionGroup
+  type: enum uint32
+  values:
+  - name: ACCOUNT_KEY_LINK
+    value: 2049
+  - name: MOSAIC_DEFINITION
+    value: 16385
+  - name: MOSAIC_SUPPLY_CHANGE
+    value: 16386
+  - name: MULTISIG_ACCOUNT_MODIFICATION
+    value: 4097
+  - name: MULTISIG_COSIGNATURE
+    value: 4098
+  - name: MULTISIG_TRANSACTION
+    value: 4100
+  - name: NAMESPACE_REGISTRATION
+    value: 8193
+  - name: TRANSFER
+    value: 257
+
+- name: NonVerifiableTransactionGroup
+  type: enum uint32
+  values:
+  - name: ACCOUNT_KEY_LINK
+    value: 2049
+  - name: MOSAIC_DEFINITION
+    value: 16385
+  - name: MOSAIC_SUPPLY_CHANGE
+    value: 16386
+  - name: MULTISIG_ACCOUNT_MODIFICATION
+    value: 4097
+  - name: NAMESPACE_REGISTRATION
+    value: 8193
+  - name: TRANSFER
+    value: 257
+
+#############################################################################
+
+
+
+# Struct definitions ########################################################
+
+- name: Transaction
+  type: struct
+  comment: binary layout for a transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionGroup
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+
+- comment: binary layout for a non-verifiable transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: NonVerifiableTransactionGroup
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  name: NonVerifiableTransaction
+  type: struct
+
+- comment: binary layout for a block
+  layout:
+  - comment: block type
+    name: type
+    type: BlockType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: previous block hash
+    name: previous_block_hash
+    type: Hash256
+  - comment: block height
+    name: height
+    type: Height
+  - comment: transactions count
+    name: transactions_count
+    type: uint32
+  - comment: transactions
+    name: transactions
+    size: transactions_count
+    type: array Transaction
+  name: Block
+  type: struct
+
+- comment: binary layout for an account key link transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: link action
+    name: link_action
+    type: LinkAction
+  - comment: remote account public key size
+    name: remote_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: public key of remote account to which importance should be transferred
+    name: remote_public_key
+    type: PublicKey
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: ACCOUNT_KEY_LINK @1
+    version_field: version
+  name: AccountKeyLinkTransaction
+  type: struct
+
+- comment: binary layout for a non-verifiable account key link transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: link action
+    name: link_action
+    type: LinkAction
+  - comment: remote account public key size
+    name: remote_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: public key of remote account to which importance should be transferred
+    name: remote_public_key
+    type: PublicKey
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: ACCOUNT_KEY_LINK @1
+    version_field: version
+  name: NonVerifiableAccountKeyLinkTransaction
+  type: struct
+
+- comment: binary layout for a namespace id
+  layout:
+  - comment: name size
+    name: name_size
+    type: uint32
+  - comment: name
+    name: name
+    size: name_size
+    type: array int8
+  name: NamespaceId
+  type: struct
+
+- comment: binary layout for a mosaic id
+  layout:
+  - comment: namespace id
+    name: namespace_id
+    type: NamespaceId
+  - comment: name size
+    name: name_size
+    type: uint32
+  - comment: name
+    name: name
+    size: name_size
+    type: array int8
+  name: MosaicId
+  type: struct
+
+- comment: binary layout for a mosaic
+  layout:
+  - comment: mosaic id size
+    name: mosaic_id_size
+    type: uint32
+  - comment: mosaic id
+    name: mosaic_id
+    type: MosaicId
+  - comment: quantity
+    name: amount
+    type: Amount
+  name: Mosaic
+  type: struct
+
+- comment: binary layout for a mosaic with a size prefixed size
+  layout:
+  - comment: mosaic size
+    name: mosaic_size
+    type: uint32
+  - comment: mosaic
+    name: mosaic
+    type: Mosaic
+  name: SizePrefixedMosaic
+  type: struct
+
+- comment: binary layout for a mosaic levy
+  layout:
+  - comment: mosaic fee type
+    name: transfer_fee_type
+    type: MosaicTransferFeeType
+  - comment: recipient address size
+    name: recipient_address_size
+    type: reserved uint32
+    value: 40
+  - comment: recipient address
+    name: recipient_address
+    type: Address
+  - comment: levy mosaic id size
+    name: mosaic_id_size
+    type: uint32
+  - comment: levy mosaic id
+    name: mosaic_id
+    type: MosaicId
+  - comment: amount of levy mosaic to transfer
+    name: fee
+    type: Amount
+  name: MosaicLevy
+  type: struct
+
+- comment: 'binary layout for a mosaic property supported property names are: divisibility,
+    initialSupply, supplyMutable, transferable'
+  layout:
+  - comment: property name size
+    name: name_size
+    type: uint32
+  - comment: property name
+    name: name
+    size: name_size
+    type: array int8
+  - comment: property value size
+    name: value_size
+    type: uint32
+  - comment: property value
+    name: value
+    size: value_size
+    type: array int8
+  name: MosaicProperty
+  type: struct
+
+- comment: binary layout for a size prefixed mosaic property
+  layout:
+  - comment: property size
+    name: property_size
+    type: uint32
+  - comment: property value
+    name: property
+    type: MosaicProperty
+  name: SizePrefixedMosaicProperty
+  type: struct
+
+- comment: binary layout for a mosaic definition
+  layout:
+  - comment: owner public key size
+    name: owner_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: owner public key
+    name: owner_public_key
+    type: PublicKey
+  - comment: mosaic id size
+    name: id_size
+    type: uint32
+  - comment: mosaic id referenced by this definition
+    name: id
+    type: MosaicId
+  - comment: description size
+    name: description_size
+    type: uint32
+  - comment: description
+    name: description
+    size: description_size
+    type: array int8
+  - comment: number of properties
+    name: properties_count
+    type: uint32
+  - comment: properties
+    name: properties
+    size: properties_count
+    type: array SizePrefixedMosaicProperty
+  - comment: size of the serialized levy
+    name: levy_size
+    type: uint32
+  - comment: optional levy that is applied to transfers of this mosaic
+    condition: levy_size
+    condition_operation: not equals
+    condition_value: 0
+    name: levy
+    type: MosaicLevy
+  name: MosaicDefinition
+  type: struct
+
+- comment: shared content between verifiable and non-verifiable mosaic definition
+    transactions
+  layout:
+  - comment: mosaic definition size
+    name: mosaic_definition_size
+    type: uint32
+  - comment: mosaic definition
+    name: mosaic_definition
+    type: MosaicDefinition
+  - comment: mosaic rental fee sink public key size
+    name: rental_fee_sink_size
+    type: reserved uint32
+    value: 40
+  - comment: mosaic rental fee sink public key
+    name: rental_fee_sink
+    type: Address
+  - comment: mosaic rental fee
+    name: rental_fee
+    type: Amount
+  name: MosaicDefinitionTransactionBody
+  type: struct
+
+- comment: binary layout for a mosaic definition transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: mosaic definition size
+    name: mosaic_definition_size
+    type: uint32
+  - comment: mosaic definition
+    name: mosaic_definition
+    type: MosaicDefinition
+  - comment: mosaic rental fee sink public key size
+    name: rental_fee_sink_size
+    type: reserved uint32
+    value: 40
+  - comment: mosaic rental fee sink public key
+    name: rental_fee_sink
+    type: Address
+  - comment: mosaic rental fee
+    name: rental_fee
+    type: Amount
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: MOSAIC_DEFINITION @1
+    version_field: version
+  name: MosaicDefinitionTransaction
+  type: struct
+
+- comment: binary layout for a non-verifiable mosaic definition transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: mosaic definition size
+    name: mosaic_definition_size
+    type: uint32
+  - comment: mosaic definition
+    name: mosaic_definition
+    type: MosaicDefinition
+  - comment: mosaic rental fee sink public key size
+    name: rental_fee_sink_size
+    type: reserved uint32
+    value: 40
+  - comment: mosaic rental fee sink public key
+    name: rental_fee_sink
+    type: Address
+  - comment: mosaic rental fee
+    name: rental_fee
+    type: Amount
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: MOSAIC_DEFINITION @1
+    version_field: version
+  name: NonVerifiableMosaicDefinitionTransaction
+  type: struct
+
+- comment: shared content between verifiable and non-verifiable mosaic supply change
+    transactions
+  layout:
+  - comment: mosaic id size
+    name: mosaic_id_size
+    type: uint32
+  - comment: mosaic id
+    name: mosaic_id
+    type: MosaicId
+  - comment: supply change action
+    name: action
+    type: MosaicSupplyChangeAction
+  - comment: change amount
+    name: delta
+    type: Amount
+  name: MosaicSupplyChangeTransactionBody
+  type: struct
+
+- comment: binary layout for a mosaic supply change transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: mosaic id size
+    name: mosaic_id_size
+    type: uint32
+  - comment: mosaic id
+    name: mosaic_id
+    type: MosaicId
+  - comment: supply change action
+    name: action
+    type: MosaicSupplyChangeAction
+  - comment: change amount
+    name: delta
+    type: Amount
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: MOSAIC_SUPPLY_CHANGE @1
+    version_field: version
+  name: MosaicSupplyChangeTransaction
+  type: struct
+
+- comment: binary layout for a non-verifiable mosaic supply change transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: mosaic id size
+    name: mosaic_id_size
+    type: uint32
+  - comment: mosaic id
+    name: mosaic_id
+    type: MosaicId
+  - comment: supply change action
+    name: action
+    type: MosaicSupplyChangeAction
+  - comment: change amount
+    name: delta
+    type: Amount
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: MOSAIC_SUPPLY_CHANGE @1
+    version_field: version
+  name: NonVerifiableMosaicSupplyChangeTransaction
+  type: struct
+
+- comment: binary layout for a multisig account modification
+  layout:
+  - comment: modification type
+    name: modification_type
+    type: MultisigAccountModificationType
+  - comment: cosignatory public size
+    name: cosignatory_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: cosignatory public key
+    name: cosignatory_public_key
+    type: PublicKey
+  name: MultisigAccountModification
+  type: struct
+
+- comment: binary layout for a multisig account modification prefixed with size
+  layout:
+  - comment: modification size
+    name: modification_size
+    type: uint32
+  - comment: modification
+    name: modification
+    type: MultisigAccountModification
+  name: SizePrefixedMultisigAccountModification
+  type: struct
+
+- comment: binary layout for a multisig account modification transaction (V1)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: number of modifications
+    name: modifications_count
+    type: uint32
+  - comment: multisig account modifications
+    name: modifications
+    size: modifications_count
+    type: array SizePrefixedMultisigAccountModification
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: MULTISIG_ACCOUNT_MODIFICATION @1
+    version_field: version
+  name: MultisigAccountModificationTransactionV1
+  type: struct
+
+- comment: binary layout for a non-verifiable multisig account modification transaction
+    (V1)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: number of modifications
+    name: modifications_count
+    type: uint32
+  - comment: multisig account modifications
+    name: modifications
+    size: modifications_count
+    type: array SizePrefixedMultisigAccountModification
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: MULTISIG_ACCOUNT_MODIFICATION @1
+    version_field: version
+  name: NonVerifiableMultisigAccountModificationTransactionV1
+  type: struct
+
+- comment: binary layout for a multisig account modification transaction (V2, latest)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: number of modifications
+    name: modifications_count
+    type: uint32
+  - comment: multisig account modifications
+    name: modifications
+    size: modifications_count
+    type: array SizePrefixedMultisigAccountModification
+  - comment: the size of the min_approval_delta
+    name: min_approval_delta_size
+    type: reserved uint32
+    value: 4
+  - comment: relative change of the minimal number of cosignatories required when
+      approving a transaction
+    name: min_approval_delta
+    type: int32
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: MULTISIG_ACCOUNT_MODIFICATION @2
+    version_field: version
+  name: MultisigAccountModificationTransaction
+  type: struct
+
+- comment: binary layout for a non-verifiable multisig account modification transaction
+    (V2, latest)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: number of modifications
+    name: modifications_count
+    type: uint32
+  - comment: multisig account modifications
+    name: modifications
+    size: modifications_count
+    type: array SizePrefixedMultisigAccountModification
+  - comment: the size of the min_approval_delta
+    name: min_approval_delta_size
+    type: reserved uint32
+    value: 4
+  - comment: relative change of the minimal number of cosignatories required when
+      approving a transaction
+    name: min_approval_delta
+    type: int32
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: MULTISIG_ACCOUNT_MODIFICATION @2
+    version_field: version
+  name: NonVerifiableMultisigAccountModificationTransaction
+  type: struct
+
+- comment: cosignature attached to an aggregate transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: multisig transaction hash outer size
+    name: multisig_transaction_hash_outer_size
+    type: reserved int32
+    value: 36
+  - comment: multisig transaction hash size
+    name: multisig_transaction_hash_size
+    type: reserved uint32
+    value: 32
+  - comment: multisig transaction hash
+    name: multisig_transaction_hash
+    type: Hash256
+  - comment: multisig account address size
+    name: multisig_account_address_size
+    type: reserved uint32
+    value: 40
+  - comment: multisig account address
+    name: multisig_account_address
+    type: Address
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: MULTISIG_COSIGNATURE @1
+    version_field: version
+  name: Cosignature
+  type: struct
+
+- comment: cosignature attached to an aggregate transaction with prefixed size
+  layout:
+  - comment: cosignature size
+    name: cosignature_size
+    type: uint32
+  - comment: cosignature
+    name: cosignature
+    type: Cosignature
+  name: SizePrefixedCosignature
+  type: struct
+
+- comment: binary layout for a multisig transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: inner transaction size
+    name: inner_transaction_size
+    type: uint32
+  - comment: inner transaction
+    header_type_field: type
+    header_version_field: version
+    name: inner_transaction
+    size: inner_transaction_size
+    type: array_sized NonVerifiableTransaction
+  - comment: number of attached cosignatures
+    name: cosignatures_count
+    type: uint32
+  - comment: cosignatures
+    name: cosignatures
+    size: cosignatures_count
+    type: array SizePrefixedCosignature
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: MULTISIG_TRANSACTION @1
+    version_field: version
+  name: MultisigTransaction
+  type: struct
+
+- comment: shared content between all verifiable and non-verifiable namespace registration
+    transactions
+  layout:
+  - comment: mosaic rental fee sink public key size
+    name: rental_fee_sink_size
+    type: reserved uint32
+    value: 40
+  - comment: mosaic rental fee sink public key
+    name: rental_fee_sink
+    type: Address
+  - comment: mosaic rental fee
+    name: rental_fee
+    type: Amount
+  - comment: new namespace name size
+    name: name_size
+    type: uint32
+  - comment: new namespace name
+    name: name
+    size: name_size
+    type: array int8
+  - comment: size of the parent namespace name
+    name: parent_name_size
+    type: uint32
+  - comment: parent namespace name
+    condition: parent_name_size
+    condition_operation: not equals
+    condition_value: 4294967295
+    name: parent_name
+    size: parent_name_size
+    type: array int8
+  name: NamespaceRegistrationTransactionBody
+  type: struct
+
+- comment: binary layout for a namespace registration transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: mosaic rental fee sink public key size
+    name: rental_fee_sink_size
+    type: reserved uint32
+    value: 40
+  - comment: mosaic rental fee sink public key
+    name: rental_fee_sink
+    type: Address
+  - comment: mosaic rental fee
+    name: rental_fee
+    type: Amount
+  - comment: new namespace name size
+    name: name_size
+    type: uint32
+  - comment: new namespace name
+    name: name
+    size: name_size
+    type: array int8
+  - comment: size of the parent namespace name
+    name: parent_name_size
+    type: uint32
+  - comment: parent namespace name
+    condition: parent_name_size
+    condition_operation: not equals
+    condition_value: 4294967295
+    name: parent_name
+    size: parent_name_size
+    type: array int8
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: NAMESPACE_REGISTRATION @1
+    version_field: version
+  name: NamespaceRegistrationTransaction
+  type: struct
+
+- comment: binary layout for a non-verifiable namespace registration transaction
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: mosaic rental fee sink public key size
+    name: rental_fee_sink_size
+    type: reserved uint32
+    value: 40
+  - comment: mosaic rental fee sink public key
+    name: rental_fee_sink
+    type: Address
+  - comment: mosaic rental fee
+    name: rental_fee
+    type: Amount
+  - comment: new namespace name size
+    name: name_size
+    type: uint32
+  - comment: new namespace name
+    name: name
+    size: name_size
+    type: array int8
+  - comment: size of the parent namespace name
+    name: parent_name_size
+    type: uint32
+  - comment: parent namespace name
+    condition: parent_name_size
+    condition_operation: not equals
+    condition_value: 4294967295
+    name: parent_name
+    size: parent_name_size
+    type: array int8
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: NAMESPACE_REGISTRATION @1
+    version_field: version
+  name: NonVerifiableNamespaceRegistrationTransaction
+  type: struct
+
+- comment: binary layout for a message
+  layout:
+  - comment: message type
+    name: message_type
+    type: MessageType
+  - comment: message size
+    name: message_size
+    type: uint32
+  - comment: message payload
+    name: message
+    size: message_size
+    type: array uint8
+  name: Message
+  type: struct
+
+- comment: binary layout for a transfer transaction (V1)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: recipient address size
+    name: recipient_address_size
+    type: reserved uint32
+    value: 40
+  - comment: recipient address
+    name: recipient_address
+    type: Address
+  - comment: XEM amount
+    name: amount
+    type: Amount
+  - comment: message envelope size
+    name: message_envelope_size
+    type: uint32
+  - comment: optional message
+    condition: message_envelope_size
+    condition_operation: not equals
+    condition_value: 0
+    name: message
+    type: Message
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: TRANSFER @1
+    version_field: version
+  name: TransferTransactionV1
+  type: struct
+
+- comment: binary layout for a non-verifiable transfer transaction (V1)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: recipient address size
+    name: recipient_address_size
+    type: reserved uint32
+    value: 40
+  - comment: recipient address
+    name: recipient_address
+    type: Address
+  - comment: XEM amount
+    name: amount
+    type: Amount
+  - comment: message envelope size
+    name: message_envelope_size
+    type: uint32
+  - comment: optional message
+    condition: message_envelope_size
+    condition_operation: not equals
+    condition_value: 0
+    name: message
+    type: Message
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: TRANSFER @1
+    version_field: version
+  name: NonVerifiableTransferTransactionV1
+  type: struct
+
+- comment: binary layout for a transfer transaction (V2, latest)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: entity signature size
+    name: signature_size
+    type: reserved uint32
+    value: 64
+  - comment: entity signature
+    name: signature
+    type: Signature
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: recipient address size
+    name: recipient_address_size
+    type: reserved uint32
+    value: 40
+  - comment: recipient address
+    name: recipient_address
+    type: Address
+  - comment: XEM amount
+    name: amount
+    type: Amount
+  - comment: message envelope size
+    name: message_envelope_size
+    type: uint32
+  - comment: optional message
+    condition: message_envelope_size
+    condition_operation: not equals
+    condition_value: 0
+    name: message
+    type: Message
+  - comment: number of attached mosaics
+    name: mosaics_count
+    type: uint32
+  - comment: attached mosaics notice that mosaic amount is multipled by transfer amount
+      to get effective amount
+    name: mosaics
+    size: mosaics_count
+    type: array SizePrefixedMosaic
+  - header: Transaction
+    type: struct_type TransactionGroup
+    type_field: type
+    value: TRANSFER @2
+    version_field: version
+  name: TransferTransaction
+  type: struct
+
+- comment: binary layout for a non-verifiable transfer transaction (V2, latest)
+  layout:
+  - comment: transaction type
+    name: type
+    type: TransactionType
+  - comment: entity version
+    name: version
+    type: uint8
+  - comment: reserved padding between version and network type
+    name: entity_body_reserved_1
+    type: reserved uint16
+    value: 0
+  - comment: entity network
+    name: network
+    type: NetworkType
+  - comment: entity timestamp
+    name: timestamp
+    type: Timestamp
+  - comment: entity signer public key size
+    name: signer_public_key_size
+    type: reserved uint32
+    value: 32
+  - comment: entity signer public key
+    name: signer_public_key
+    type: PublicKey
+  - comment: transaction fee
+    name: fee
+    type: Amount
+  - comment: transaction deadline
+    name: deadline
+    type: Timestamp
+  - comment: recipient address size
+    name: recipient_address_size
+    type: reserved uint32
+    value: 40
+  - comment: recipient address
+    name: recipient_address
+    type: Address
+  - comment: XEM amount
+    name: amount
+    type: Amount
+  - comment: message envelope size
+    name: message_envelope_size
+    type: uint32
+  - comment: optional message
+    condition: message_envelope_size
+    condition_operation: not equals
+    condition_value: 0
+    name: message
+    type: Message
+  - comment: number of attached mosaics
+    name: mosaics_count
+    type: uint32
+  - comment: attached mosaics notice that mosaic amount is multipled by transfer amount
+      to get effective amount
+    name: mosaics
+    size: mosaics_count
+    type: array SizePrefixedMosaic
+  - header: NonVerifiableTransaction
+    type: struct_type NonVerifiableTransactionGroup
+    type_field: type
+    value: TRANSFER @2
+    version_field: version
+  name: NonVerifiableTransferTransaction
+  type: struct
+
+#############################################################################

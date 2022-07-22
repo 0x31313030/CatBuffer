@@ -131,7 +131,6 @@ class CppClassDeclarationGenerator():
             size_var   = field["size"]
             array_name = field["name"]
 
-            #TODO: add check that size_var is an int and that var is defined before array
             if size_var not in self.size_to_arrays:
                 self.size_to_arrays[ size_var ] = []
 

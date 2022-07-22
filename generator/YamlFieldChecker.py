@@ -81,7 +81,7 @@ class YamlFieldChecker():
         lhs_is_enum    = lhs_type in user_types.name_to_enum
         rhs_is_enum    = lhs_is_enum and rhs_value in user_types.name_to_enum[lhs_type].values
         
-        if not rhs_is_literal and rhs_value not in member_vars and not rhs_is_enum: #and cond_value not in user_types.name_to_enum[cond_type].values:
+        if not rhs_is_literal and rhs_value not in member_vars and not rhs_is_enum:
             return YamlFieldCheckResult.CONDITION_VALUE_NOT_DEFINED, f"\n\nError: Condition value '{field['condition_value']}' not defined in struct '{class_name}'!\n\n"
 
 
@@ -110,20 +110,10 @@ class YamlFieldChecker():
         if 'value' not in field:
             return YamlFieldCheckResult.VALUE_MISSING, f"\n\nError: 'value' key missing for 'reserved' field in struct '{class_name}'!\n\n"
 
-        value = str(field['value'])
+        value = field['value']
 
-        tmp = value.split()
-
-        if len(tmp) > 1:
-            if tmp[0] != "sizeof":
-                print(f"\n\nError: Value of 'reserved' field '{value}' unknown") #TODO: just temporary do a YamlFieldCheckResult value and return that instead
-                exit(1) 
-
-            value = "0"
-
-
-        if not value.isdigit():
-            return YamlFieldCheckResult.VALUE_NOT_NUMERIC_NOR_ENUM, f"\n\nError: Value of 'reserved' field '{value}' not numeric in struct '{class_name}'!\n\n"
+        if not isinstance(value, int):
+            return YamlFieldCheckResult.VALUE_NOT_NUMERIC_NOR_ENUM, f"\n\nError: Value of 'reserved' field '{field['name']}' with value '{value}' which is not numeric in struct '{class_name}'!\n\n"
 
         return YamlFieldCheckResult.OK, ""
 
