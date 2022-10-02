@@ -22,56 +22,60 @@ class CppPrintOutputGenerator():
         self.__code_output  += f'\tstd::cout << tabs << "{{\\n";\n\n'
 
 
-    def normal_field( self, var_type: str, var_name: str, print_hint: str = "" ):
+    def normal_field( self, var_type: str, var_name: str, print_hint: str = "", extra_tab: bool = False ):
         member_name = CppFieldGenerator.convert_to_field_name(var_name)
+
+        ptab = '"\\t" <<' if extra_tab else '' # print tab
+        ct   = '\t' if extra_tab else '' # code tab
 
         if var_type in self.__name_to_alias:
             typedef = self.__name_to_alias[var_type]
 
             if typedef.size == 1:
-                self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << +(static_cast<{typedef.type}>({member_name})) << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
+                self.__code_output += f'{ct}\tstd::cout << tabs << {ptab} "\\t{var_type} {member_name}: " << +(static_cast<{typedef.type}>({member_name})) << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
             else:
                 print_mod, separator = get_print_mod(typedef.hint)
 
-                self.__code_output += f'\n\t{{\n'
-                self.__code_output += f'\tstd::ios_base::fmtflags flags( std::cout.flags() );\n'
-                self.__code_output += f'\tstd::cout << tabs << "\\t{typedef.type} " << "{member_name}[ " << {typedef.size} << " ] = ";\n'
-                self.__code_output += f'\tfor( size_t j=0; j<{typedef.size}; ++j )\n'
-                self.__code_output += f'\t{{\n'
-                self.__code_output += f'\t\tstd::cout << {print_mod}{member_name}.data[j] {separator};\n'
-                self.__code_output += f'\t}}\n'
-                self.__code_output += f'\tstd::cout.flags( flags );\n\t}}\n'
-                self.__code_output += f'\tstd::cout <<  " (" << sizeof({member_name}) <<" bytes)\\n";\n'
+                self.__code_output += f'{ct}\n\t{{\n'
+                self.__code_output += f'{ct}\tstd::ios_base::fmtflags flags( std::cout.flags() );\n'
+                self.__code_output += f'{ct}\tstd::cout << tabs << {ptab} "\\t{typedef.type} " << "{member_name}[ " << {typedef.size} << " ] = ";\n'
+                self.__code_output += f'{ct}\tfor( size_t j=0; j<{typedef.size}; ++j )\n'
+                self.__code_output += f'{ct}\t{{\n'
+                self.__code_output += f'{ct}\t\tstd::cout << {print_mod}{member_name}.data[j] {separator};\n'
+                self.__code_output += f'{ct}\t}}\n'
+                self.__code_output += f'{ct}\tstd::cout.flags( flags );\n\t}}\n'
+                self.__code_output += f'{ct}\tstd::cout <<  " (" << sizeof({member_name}) <<" bytes)\\n";\n'
 
         elif var_type in self.__name_to_enum:
             enum_type = self.__name_to_enum[var_type].type
-            self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << +static_cast<{enum_type}>({member_name}) << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
+            self.__code_output += f'{ct}\tstd::cout << tabs << {ptab} "\\t{var_type} {member_name}: " << +static_cast<{enum_type}>({member_name}) << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
 
         elif var_type in CppFieldGenerator.builtin_types:
 
             if var_name in self.__size_to_arrays: # if variable is an array size, use the vector '.size()' method
                 array_name = self.__size_to_arrays[var_name][0]
                 array_name = CppFieldGenerator.convert_to_field_name(array_name)
-                self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << {array_name}.size() << " (" << sizeof({var_type}) <<" bytes)\\n";\n'
+                self.__code_output += f'{ct}\tstd::cout << tabs << {ptab} "\\t{var_type} {member_name}: " << {array_name}.size() << " (" << sizeof({var_type}) <<" bytes)\\n";\n'
             else:
                 print_mod, separator = get_print_mod(print_hint)
-                self.__code_output += f'\n\t{{\n'
-                self.__code_output += f'\tstd::ios_base::fmtflags flags( std::cout.flags() );\n'
+                self.__code_output += f'{ct}\n\t{{\n'
+                self.__code_output += f'{ct}\tstd::ios_base::fmtflags flags( std::cout.flags() );\n'
 
                 if print_hint: # if a hint is given, print array content on a single line as hex, asci, etc, without type information
-                    self.__code_output += f'\tstd::cout << {print_mod}{member_name} {separator};\n'
+                    self.__code_output += f'{ct}\tstd::cout << {print_mod}{member_name} {separator};\n'
                 else:
-                    self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << {print_mod}{member_name} << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
+                    self.__code_output += f'{ct}\tstd::cout << tabs << {ptab} "\\t{var_type} {member_name}: " << {print_mod}{member_name} << " (" << sizeof({member_name}) <<" bytes)\\n";\n'
 
-                self.__code_output += f'\tstd::cout.flags( flags );\n\t}}\n'
+                self.__code_output += f'{ct}\tstd::cout.flags( flags );\n\t}}\n'
 
         elif var_type == "varint":
-            self.__code_output += f'\tstd::cout << tabs << "\\t{var_type} {member_name}: " << {member_name} << " (" << sizeVarint({member_name}) << " bytes)\\n";\n'
+            self.__code_output += f'{ct}\tstd::cout << tabs << {ptab} "\\t{var_type} {member_name}: " << {member_name} << " (" << sizeVarint({member_name}) << " bytes)\\n";\n'
 
         else:
-            self.__code_output += f'\tstd::cout << "\\n";\n'
-            self.__code_output += f'\t{member_name}.Print( level+1 );\n'
-            self.__code_output += f'\tstd::cout << "\\n";\n'
+            level = '2' if extra_tab else '1'
+            self.__code_output += f'{ct}\tstd::cout << "\\n";\n'
+            self.__code_output += f'{ct}\t{member_name}.Print( level+{level} );\n'
+            self.__code_output += f'{ct}\tstd::cout << "\\n";\n'
 
 
 
@@ -89,8 +93,10 @@ class CppPrintOutputGenerator():
             self.__code_output += f'\tstd::cout << "\\n";\n'
         self.__code_output += f'\tfor( size_t i=0; i<{arr_member_name}.size(); ++i )\n'
         self.__code_output += f'\t{{\n'
+        if not print_hint:
+            self.__code_output += f'\t\tstd::cout << tabs << "\\t[" << i << "]";\n' #  std::cout << tabs << "\t[" << i << "]\n";
 
-        self.normal_field(array_type, array_name+'[i]', print_hint)
+        self.normal_field(array_type, array_name+'[i]', print_hint, True)
 
         self.__code_output += f'\t}}\n'
 

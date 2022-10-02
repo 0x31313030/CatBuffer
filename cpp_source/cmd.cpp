@@ -71,6 +71,8 @@ int main( int argc, char* argv[] )
       buffer = std::vector<uint8_t> { std::istreambuf_iterator<char>(infile), std::istreambuf_iterator<char>() };
     }
 
+    printf( "Read %lu bytes of input in buffer!\n", buffer.size() );
+
     RawBuffer rawbuf( buffer.data(), buffer.size() );
     std::unique_ptr<ICatbuffer> cat;
 

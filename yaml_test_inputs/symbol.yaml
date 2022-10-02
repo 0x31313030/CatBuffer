@@ -447,6 +447,7 @@
     name: aggregate_transaction_header_reserved_1
     type: reserved uint32
     value: 0
+
   - comments: sub-transaction data (transactions are variable sized and payload size
       is in bytes)
     name: transactions
@@ -455,6 +456,7 @@
     header_type_field: type
     header_version_field: EntityBody.mVersion
     align: 8
+    
   - comments: cosignatures data (fills remaining body space after transactions)
     name: cosignatures
     type: array_fill Cosignature
